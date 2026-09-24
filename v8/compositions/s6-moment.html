@@ -1,0 +1,67 @@
+<template id="s6-moment-template">
+  <div data-composition-id="s6-moment" data-width="1080" data-height="1920" data-duration="7.5">
+    <style>
+      #s6Chips { position: absolute; left: 70px; width: 940px; top: 1150px; display: flex; flex-wrap: wrap; gap: 14px; }
+      #s6Chips .chip { opacity: 0; font-size: 42px; }
+      #s6Stamp { left: 540px; top: 1420px; opacity: 0; }
+    </style>
+
+    <div class="kick" id="s6K">Charakter</div>
+    <div class="ttl" id="s6T">Moment od<br><em>samego dołu</em></div>
+
+    <svg class="bsvg" viewBox="0 0 1080 1920">
+      <rect x="70" y="520" width="940" height="560" fill="rgba(9,12,17,0.9)" stroke="rgba(150,165,182,0.3)" />
+      <text x="100" y="562">Moment obrotowy</text>
+      <line x1="100" y1="1010" x2="980" y2="1010" stroke="rgba(150,165,182,0.5)" stroke-width="2" />
+      <text x="100" y="1052" style="font-size:20px">1000</text>
+      <text x="980" y="1052" text-anchor="end" style="font-size:20px">6000 obr/min</text>
+      <g id="s6Lag" opacity="0">
+        <rect x="100" y="600" width="176" height="410" fill="rgba(226,73,43,0.14)" />
+        <line x1="276" y1="600" x2="276" y2="1010" stroke="#ff6a4d" stroke-width="3" stroke-dasharray="8 8" />
+        <text x="112" y="640" style="fill:#ff6a4d;font-size:22px;font-weight:600">CZEKASZ</text>
+        <text x="112" y="668" style="fill:#ff6a4d;font-size:22px;font-weight:600">NA TURBO</text>
+      </g>
+      <path id="s6R4" fill="none" stroke="#b6c1cf" stroke-width="6" stroke-linejoin="round" />
+      <path id="s6V8" fill="none" stroke="#f5aa3c" stroke-width="8" stroke-linejoin="round" />
+      <text id="s6LV" x="960" y="700" text-anchor="end" style="fill:#f5aa3c;font-size:26px;font-weight:600" opacity="0">V8 WOLNOSSĄCY</text>
+      <text id="s6LR" x="960" y="860" text-anchor="end" style="fill:#b6c1cf;font-size:26px;font-weight:600" opacity="0">R4 TURBO</text>
+    </svg>
+
+    <div id="s6Chips">
+      <span class="chip oil" id="s6C1">OHV</span>
+      <span class="chip oil" id="s6C2">1 wałek rozrządu</span>
+      <span class="chip oil" id="s6C3">16 zaworów</span>
+    </div>
+    <div class="stamp ok" id="s6Stamp">Prosty = trwały</div>
+
+    <script>
+      (function () {
+        // krzywe poglądowe (bez skali): V8 ma moment od razu, mała turbo-czwórka czeka na ciśnienie doładowania
+        const X = (rpm) => 100 + ((rpm - 1000) / 5000) * 880, Y = (v) => 1010 - v * 390;
+        function path(f) { const p = []; for (let r = 1000; r <= 6000; r += 50) p.push(`${X(r).toFixed(1)},${Y(f(r)).toFixed(1)}`); return "M " + p.join(" L "); }
+        const v8 = (r) => 0.72 + 0.26 * Math.min(1, (r - 1000) / 1800) - 0.18 * Math.max(0, (r - 4200) / 1800) ** 2;
+        const r4 = (r) => { const b = 1 / (1 + Math.exp(-(r - 2000) / 180)); return 0.28 + 0.4 * b - 0.14 * Math.max(0, (r - 4500) / 1500) ** 2; };
+        const pV = document.getElementById("s6V8"), pR = document.getElementById("s6R4");
+        pV.setAttribute("d", path(v8)); pR.setAttribute("d", path(r4));
+        const lV = pV.getTotalLength(), lR = pR.getTotalLength();
+        gsap.set(pV, { strokeDasharray: lV, strokeDashoffset: lV });
+        gsap.set(pR, { strokeDasharray: lR, strokeDashoffset: lR });
+
+        const tl = gsap.timeline({ paused: true });
+        tl.fromTo("#s6T", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 0.1);
+        tl.to(pV, { strokeDashoffset: 0, duration: 1.4, ease: "power1.inOut" }, 0.3);
+        tl.to("#s6LV", { opacity: 1, duration: 0.3 }, 1.4);
+        // "bez czekania na turbo"
+        tl.to(pR, { strokeDashoffset: 0, duration: 1.2, ease: "power1.inOut" }, 1.6);
+        tl.to("#s6LR", { opacity: 1, duration: 0.3 }, 2.5);
+        tl.to("#s6Lag", { opacity: 1, duration: 0.3 }, 2.3);
+        // "klasyczny rozrząd OHV to mało części"
+        tl.fromTo(["#s6C1", "#s6C2", "#s6C3"], { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3, stagger: 0.35, ease: "back.out(2)" }, 3.6);
+        tl.fromTo("#s6Stamp", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, duration: 0.3, ease: "power4.in" }, 5.7);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["s6-moment"] = tl;
+      })();
+    </script>
+  </div>
+</template>

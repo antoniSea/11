@@ -1,0 +1,101 @@
+<template id="s4-wal-template">
+  <div data-composition-id="s4-wal" data-width="1080" data-height="1920" data-duration="9">
+    <style>
+      #s4View { position: absolute; left: 70px; top: 520px; font-family: var(--mono); font-size: 26px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fg-2); }
+      #s4Stamp { left: 540px; top: 1400px; opacity: 0; }
+    </style>
+
+    <div class="kick" id="s4K">Wał korbowy</div>
+    <div class="ttl" id="s4T">Cross-plane:<br>wał <em>krzyżowy</em></div>
+    <div id="s4View">Widok z boku</div>
+
+    <svg class="bsvg" viewBox="0 0 1080 1920">
+      <g id="s4Cw"></g>
+      <line id="s4Axis" x1="150" y1="960" x2="930" y2="960" stroke="#a4afbb" stroke-width="40" stroke-linecap="round" />
+      <g id="s4Crank"></g>
+      <g id="s4Cross" opacity="0">
+        <circle cx="540" cy="960" r="250" fill="none" stroke="#f5aa3c" stroke-width="3" stroke-dasharray="10 10" />
+      </g>
+      <g id="s4Vib" opacity="0">
+        <text x="70" y="1290">Drgania</text>
+        <line x1="70" y1="1380" x2="1010" y2="1380" stroke="rgba(150,165,182,0.3)" stroke-width="2" />
+        <path id="s4VibP" fill="none" stroke="#ff6a4d" stroke-width="5" />
+      </g>
+    </svg>
+    <div class="stamp ok" id="s4Stamp">Gładko jak V12</div>
+
+    <script>
+      (function () {
+        const { el, D2R, lerp, easeIO, clamp01 } = window.V8;
+        const CX = 540, CY = 960, RR = 180;
+        // wykorbienia 1-4 wzdłuż wału, fazy 0 / 90 / 270 / 180 = krzyż patrząc od przodu
+        const THROWS = [{ x: -270, ph: 0 }, { x: -90, ph: 90 }, { x: 90, ph: 270 }, { x: 270, ph: 180 }];
+        const gC = document.getElementById("s4Crank"), gW = document.getElementById("s4Cw");
+        const parts = THROWS.map((th, i) => ({
+          th,
+          cw: el("path", { fill: "#3a444f", stroke: "#8a95a2", "stroke-width": 3, opacity: 0 }, gW),
+          web: el("line", { stroke: "#5b6573", "stroke-width": 46, "stroke-linecap": "round" }, gC),
+          pin: el("circle", { r: 34, fill: "#c3ccd6", stroke: "#eef2f7", "stroke-width": 3 }, gC),
+          num: el("text", { "text-anchor": "middle", style: "font-size:30px;font-weight:600;fill:#0a0c10;letter-spacing:0" }, gC),
+        }));
+        parts.forEach((p, i) => { p.num.textContent = i + 1; });
+        const hub = el("circle", { cx: CX, cy: CY, r: 40, fill: "#a4afbb", stroke: "#eef2f7", "stroke-width": 3, opacity: 0 }, gC);
+        const vib = document.getElementById("s4VibP");
+        const view = document.getElementById("s4View");
+        const st = { deg: 0 };
+        let tl;
+
+        function draw() {
+          const t = tl ? tl.time() : 0;
+          const m = easeIO((t - 3.6) / 1.0);          // 0 = z boku, 1 = od przodu
+          const cwK = clamp01((t - 5.6) / 0.5);        // przeciwwagi
+          view.textContent = m < 0.5 ? "Widok z boku" : "Widok od przodu";
+          hub.setAttribute("opacity", m.toFixed(3));
+          document.getElementById("s4Axis").setAttribute("opacity", (1 - m).toFixed(3));
+          // najpierw rysuj to, co dalej od widza
+          const order = parts.map((p) => ({ p, a: (p.th.ph + st.deg) * D2R })).sort((u, v) => Math.sin(u.a) * (1 - m) - Math.sin(v.a) * (1 - m));
+          order.forEach(({ p, a }, k) => {
+            const bx = lerp(p.th.x, 0, m);
+            const px = lerp(p.th.x, Math.sin(a) * RR, m), py = -Math.cos(a) * RR;
+            const depth = 1 + 0.18 * Math.sin(a) * (1 - m);
+            p.web.setAttribute("x1", CX + bx); p.web.setAttribute("y1", CY);
+            p.web.setAttribute("x2", (CX + px).toFixed(2)); p.web.setAttribute("y2", (CY + py).toFixed(2));
+            p.pin.setAttribute("cx", (CX + px).toFixed(2)); p.pin.setAttribute("cy", (CY + py).toFixed(2));
+            p.pin.setAttribute("r", (34 * depth).toFixed(2));
+            p.num.setAttribute("x", (CX + px).toFixed(2)); p.num.setAttribute("y", (CY + py + 10).toFixed(2));
+            gC.appendChild(p.web); gC.appendChild(p.pin); gC.appendChild(p.num);
+            // przeciwwaga naprzeciw każdego wykorbienia (tylko w widoku od przodu)
+            const R2 = 150, a0 = a + Math.PI - 0.55, a1 = a + Math.PI + 0.55;
+            p.cw.setAttribute("d", `M ${CX} ${CY} L ${(CX + Math.sin(a0) * R2).toFixed(2)} ${(CY - Math.cos(a0) * R2).toFixed(2)} A ${R2} ${R2} 0 0 1 ${(CX + Math.sin(a1) * R2).toFixed(2)} ${(CY - Math.cos(a1) * R2).toFixed(2)} Z`);
+            p.cw.setAttribute("opacity", (cwK * m * 0.9).toFixed(3));
+          });
+          gC.appendChild(hub);
+          // drgania gasną po dodaniu przeciwwag
+          const amp = lerp(70, 6, easeIO((t - 5.8) / 1.4));
+          const pts = [];
+          for (let i = 0; i <= 120; i++) {
+            const x = i / 120, ph = x * 14 * Math.PI + st.deg * D2R * 2;
+            pts.push(`${(70 + x * 940).toFixed(1)},${(1380 - amp * (0.7 * Math.sin(ph) + 0.3 * Math.sin(ph * 2.3))).toFixed(1)}`);
+          }
+          vib.setAttribute("d", "M " + pts.join(" L "));
+        }
+
+        tl = gsap.timeline({ paused: true });
+        draw();
+        // wolno, 1/4 obrotu na sekundę, żeby krzyż było widać
+        tl.to(st, { deg: 90 * 9, duration: 9, ease: "none", onUpdate: draw }, 0);
+
+        tl.fromTo("#s4T", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 0.1);
+        // "układają się w krzyż"
+        tl.to("#s4Cross", { opacity: 1, duration: 0.4 }, 4.7);
+        // "z przeciwwagami siły się znoszą"
+        tl.to("#s4Vib", { opacity: 1, duration: 0.3 }, 5.4);
+        tl.to("#s4Cross", { opacity: 0.35, duration: 0.4 }, 5.6);
+        tl.fromTo("#s4Stamp", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, duration: 0.3, ease: "power4.in" }, 7.4);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["s4-wal"] = tl;
+      })();
+    </script>
+  </div>
+</template>
