@@ -1,0 +1,112 @@
+<template id="s3-zaplony-template">
+  <div data-composition-id="s3-zaplony" data-width="1080" data-height="1920" data-duration="9">
+    <style>
+      .s3-name { position: absolute; top: 540px; width: 400px; text-align: center; font-size: 64px; font-weight: 600; text-transform: uppercase; opacity: 0; }
+      .s3-every { position: absolute; top: 1036px; width: 400px; text-align: center; font-family: var(--mono); font-size: 36px; font-weight: 600; opacity: 0; }
+      #s3Cyc { position: absolute; left: 0; right: 0; top: 470px; text-align: center; font-family: var(--mono); font-size: 26px; letter-spacing: 0.18em; color: var(--fg-2); text-transform: uppercase; opacity: 0; }
+      #s3Chip { position: absolute; left: 70px; top: 1488px; opacity: 0; font-size: 40px; }
+    </style>
+
+    <div class="kick" id="s3K">Zapłony</div>
+    <div class="ttl" id="s3T">V8 odpala <em>co 90°</em></div>
+    <div id="s3Cyc">Pełny cykl = 2 obroty wału = 720°</div>
+
+    <div class="s3-name" id="s3NA" style="left:100px">R4</div>
+    <div class="s3-name em" id="s3NB" style="left:580px">V8</div>
+
+    <svg class="bsvg" viewBox="0 0 1080 1920">
+      <g id="s3DA"></g>
+      <g id="s3DB"></g>
+      <g id="s3Tq" opacity="0">
+        <text x="70" y="1150">R4 · moment na wale</text>
+        <line x1="70" y1="1300" x2="1010" y2="1300" stroke="rgba(150,165,182,0.4)" stroke-width="2" />
+        <path id="s3PA" fill="none" stroke="#b6c1cf" stroke-width="5" stroke-linejoin="round" />
+        <text x="70" y="1340" style="fill:#f5aa3c">V8 · moment na wale</text>
+        <line x1="70" y1="1470" x2="1010" y2="1470" stroke="rgba(150,165,182,0.4)" stroke-width="2" />
+        <path id="s3PB" fill="none" stroke="#f5aa3c" stroke-width="6" stroke-linejoin="round" />
+      </g>
+    </svg>
+
+    <div class="s3-every" id="s3EA" style="left:100px;color:#b6c1cf">co 180°</div>
+    <div class="s3-every" id="s3EB" style="left:580px;color:#f5aa3c">co 90°</div>
+    <div id="s3Chip" class="chip">Równo, bez szarpania</div>
+
+    <script>
+      (function () {
+        const { el, D2R, wrap, clamp01 } = window.V8;
+        const R = 170, CY = 830;
+        // tarcza = jeden pełny cykl 720°; zapłony co 180° (R4) i co 90° (V8)
+        function dial(g, cx, n, color) {
+          el("circle", { cx, cy: CY, r: R, fill: "rgba(9,12,17,0.9)", stroke: "rgba(150,165,182,0.45)", "stroke-width": 3 }, g);
+          el("circle", { cx, cy: CY, r: R - 34, fill: "none", stroke: "rgba(150,165,182,0.12)", "stroke-width": 2 }, g);
+          const ticks = [];
+          for (let i = 0; i < n; i++) {
+            const a = (i / n) * 360 * D2R;
+            const t = el("circle", { cx: cx + Math.sin(a) * R, cy: CY - Math.cos(a) * R, r: 18, fill: color, opacity: 0 }, g);
+            ticks.push({ t, deg: (i / n) * 720 });
+          }
+          const needle = el("line", { x1: cx, y1: CY, x2: cx, y2: CY - R + 30, stroke: "#eef2f7", "stroke-width": 7, "stroke-linecap": "round" }, g);
+          el("circle", { cx, cy: CY, r: 12, fill: "#eef2f7" }, g);
+          return { cx, ticks, needle };
+        }
+        const A = dial(document.getElementById("s3DA"), 300, 4, "#b6c1cf");
+        const B = dial(document.getElementById("s3DB"), 780, 8, "#f5aa3c");
+        const st = { deg: 0 };
+        let tl;
+        function draw() {
+          const d = wrap(st.deg, 720);
+          for (const D of [A, B]) {
+            const a = (d / 2) * D2R;
+            D.needle.setAttribute("x2", (D.cx + Math.sin(a) * (R - 30)).toFixed(2));
+            D.needle.setAttribute("y2", (CY - Math.cos(a) * (R - 30)).toFixed(2));
+            // widoczność liczona z czasu osi, żeby każde przewinięcie dawało ten sam obraz
+            const t = tl ? tl.time() : 0;
+            const show = D === A ? clamp01((t - 3.3) / 0.3) : clamp01((t - 5.3) / 0.3);
+            for (const k of D.ticks) {
+              const since = wrap(d - k.deg, 720);
+              const hit = since < 60 ? 1 - since / 60 : 0;
+              k.t.setAttribute("opacity", (show * (0.45 + 0.55 * hit)).toFixed(3));
+              k.t.setAttribute("r", (18 + 14 * hit * show).toFixed(2));
+            }
+          }
+        }
+
+        // przebieg momentu: suma impulsów z każdego zapłonu, ta sama średnia dla obu silników
+        function torquePath(step, y0, amp) {
+          const pts = [], N = 360, span = 1440;
+          const f = (x) => { let s = 0; for (let fi = -720; fi < span + 720; fi += step) { const u = x - fi; if (u > 0 && u < 180) s += Math.pow(Math.sin(u * D2R), 3); } return s; };
+          let mean = 0; for (let i = 0; i < N; i++) mean += f((i / N) * 720); mean /= N;
+          for (let i = 0; i <= N; i++) { const x = (i / N) * span; pts.push(`${(70 + (i / N) * 940).toFixed(1)},${(y0 - (f(x) / mean) * amp).toFixed(1)}`); }
+          return "M " + pts.join(" L ");
+        }
+        const pA = document.getElementById("s3PA"), pB = document.getElementById("s3PB");
+        pA.setAttribute("d", torquePath(180, 1300, 55));
+        pB.setAttribute("d", torquePath(90, 1470, 55));
+        const lenA = pA.getTotalLength(), lenB = pB.getTotalLength();
+        gsap.set(pA, { strokeDasharray: lenA, strokeDashoffset: lenA });
+        gsap.set(pB, { strokeDasharray: lenB, strokeDashoffset: lenB });
+
+        tl = gsap.timeline({ paused: true });
+        draw();
+        // jeden cykl na 2,4 s, żeby dało się policzyć zapłony
+        tl.to(st, { deg: 720 * 9 / 2.4, duration: 9, ease: "none", onUpdate: draw }, 0);
+
+        tl.fromTo("#s3T", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 0.1);
+        tl.to("#s3Cyc", { opacity: 1, duration: 0.3 }, 0.6);
+        tl.to(["#s3NA", "#s3NB"], { opacity: 1, duration: 0.3 }, 0.6);
+        // "Czwórka odpala co sto osiemdziesiąt"
+        tl.fromTo("#s3EA", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.3 }, 3.4);
+        // "V8 co dziewięćdziesiąt"
+        tl.fromTo("#s3EB", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.3 }, 5.4);
+        // "moment płynie równo"
+        tl.to("#s3Tq", { opacity: 1, duration: 0.25 }, 6.5);
+        tl.to(pA, { strokeDashoffset: 0, duration: 1.1, ease: "none" }, 6.5);
+        tl.to(pB, { strokeDashoffset: 0, duration: 1.1, ease: "none" }, 6.7);
+        tl.fromTo("#s3Chip", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3, ease: "back.out(2)" }, 7.9);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["s3-zaplony"] = tl;
+      })();
+    </script>
+  </div>
+</template>

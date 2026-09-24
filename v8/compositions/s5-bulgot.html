@@ -1,0 +1,108 @@
+<template id="s5-bulgot-template">
+  <div data-composition-id="s5-bulgot" data-width="1080" data-height="1920" data-duration="10">
+    <style>
+      #s5Ord { position: absolute; left: 70px; top: 1010px; display: flex; gap: 12px; }
+      #s5Ord div { width: 105px; height: 96px; line-height: 92px; text-align: center; font-family: var(--mono); font-weight: 600; font-size: 56px; background: var(--panel); border: 2px solid var(--hair); color: var(--fg-2); opacity: 0; }
+      #s5Chip { position: absolute; left: 70px; top: 1488px; opacity: 0; font-size: 40px; }
+    </style>
+
+    <div class="kick" id="s5K">Dźwięk</div>
+    <div class="ttl" id="s5T">Skąd ten <em>bulgot</em>?</div>
+
+    <svg class="bsvg" viewBox="0 0 1080 1920">
+      <text x="540" y="480" text-anchor="middle">▲ Przód</text>
+      <rect x="300" y="500" width="480" height="470" rx="26" fill="#141a21" stroke="rgba(150,165,182,0.4)" stroke-width="3" />
+      <text x="330" y="545" style="font-size:20px">Lewy rząd</text>
+      <text x="750" y="545" text-anchor="end" style="font-size:20px">Prawy rząd</text>
+      <g id="s5Cyl"></g>
+      <g id="s5Rows" opacity="0"></g>
+    </svg>
+    <div id="s5Ord"></div>
+    <div id="s5Chip" class="chip oil">Nierówne pulsy = bulgot</div>
+
+    <script>
+      (function () {
+        const { el, wrap, clamp01 } = window.V8;
+        const ORDER = [1, 8, 4, 3, 6, 5, 7, 2];
+        // kąt zapłonu każdego cylindra w cyklu 720°
+        const FIRE = {}; ORDER.forEach((c, i) => { FIRE[c] = i * 90; });
+        // widok z góry: nieparzyste po lewej, parzyste po prawej (numeracja GM), prawy rząd lekko przesunięty
+        const gC = document.getElementById("s5Cyl"), cyl = {};
+        for (let c = 1; c <= 8; c++) {
+          const left = c % 2 === 1, k = Math.floor((c - 1) / 2);
+          const x = left ? 420 : 660, y = 600 + k * 90 + (left ? 0 : 36);
+          const ring = el("circle", { cx: x, cy: y, r: 44, fill: "#2a323c", stroke: "rgba(150,165,182,0.6)", "stroke-width": 3 }, gC);
+          const fire = el("circle", { cx: x, cy: y, r: 44, fill: "#ff6a4d", opacity: 0 }, gC);
+          const tx = el("text", { x, y: y + 11, "text-anchor": "middle", style: "font-size:32px;font-weight:600;fill:#eef2f7;letter-spacing:0" }, gC);
+          tx.textContent = c;
+          cyl[c] = { fire };
+        }
+        const ordBox = document.getElementById("s5Ord");
+        const boxes = ORDER.map((c) => { const d = document.createElement("div"); d.textContent = c; ordBox.appendChild(d); return d; });
+
+        // osie zapłonów w każdym rzędzie: odstępy wychodzą nierówne
+        const gR = document.getElementById("s5Rows");
+        const X0 = 70, XW = 940, rows = [
+          { name: "Lewy rząd · 1 3 5 7", y: 1210, cyls: [1, 3, 5, 7] },
+          { name: "Prawy rząd · 2 4 6 8", y: 1390, cyls: [8, 4, 6, 2] },
+        ];
+        const pulsePaths = [];
+        for (const r of rows) {
+          el("text", { x: X0, y: r.y - 78 }, gR).textContent = r.name;
+          el("line", { x1: X0, y1: r.y, x2: X0 + XW, y2: r.y, stroke: "rgba(150,165,182,0.4)", "stroke-width": 2 }, gR);
+          const angs = r.cyls.map((c) => FIRE[c]).sort((a, b) => a - b);
+          angs.forEach((a, i) => {
+            const nx = i + 1 < angs.length ? angs[i + 1] : angs[0] + 720;
+            const d = nx - a, xm = X0 + ((a + d / 2) / 720) * XW;
+            const lab = el("text", { x: xm, y: r.y + 40, "text-anchor": "middle", style: `font-size:26px;font-weight:600;letter-spacing:0;fill:${d === 180 ? "#b6c1cf" : "#ff6a4d"}` }, gR);
+            lab.textContent = d + "°";
+          });
+          pulsePaths.push({ p: el("path", { fill: "none", stroke: "#f5aa3c", "stroke-width": 5 }, gR), angs, y: r.y });
+        }
+
+        const st = { deg: 0 };
+        let tl;
+        // tempo cyklu: wolno podczas czytania kolejności, potem szybciej
+        const cyc = (t) => (t < 1.2 ? 0 : t < 5.2 ? ((t - 1.2) / 4) * 720 : 720 + ((t - 5.2) / 1.6) * 720);
+        function draw() {
+          const t = tl ? tl.time() : 0;
+          const d = cyc(t), dm = wrap(d, 720), on = t >= 1.1 ? 1 : 0;
+          for (let c = 1; c <= 8; c++) {
+            const since = wrap(dm - FIRE[c], 720);
+            cyl[c].fire.setAttribute("opacity", (on * (since < 80 ? 1 - since / 80 : 0)).toFixed(3));
+          }
+          boxes.forEach((b, i) => {
+            const since = wrap(dm - i * 90, 720), hit = on && since < 90;
+            b.style.opacity = t < 1.2 ? 0 : clamp01((t - 1.2 - i * 0.12) / 0.2);
+            b.style.color = hit ? "#1a1206" : "#b6c1cf";
+            b.style.background = hit ? "#f5aa3c" : "rgba(9,12,17,0.92)";
+          });
+          // pulsy wydechu przesuwają się w lewo
+          const sh = t > 7.4 ? (t - 7.4) * 480 : 0;
+          for (const pp of pulsePaths) {
+            const pts = [];
+            for (let i = 0; i <= 240; i++) {
+              const x = i / 240, a = x * 720 + sh;
+              let v = 0;
+              for (const f of pp.angs) for (const k of [-720, 0, 720, 1440]) { const u = wrap(a, 720) - f - k; v += Math.exp(-Math.pow(u / 22, 2)); }
+              pts.push(`${(X0 + x * XW).toFixed(1)},${(pp.y - 55 * v * clamp01((t - 5.3) / 0.4)).toFixed(1)}`);
+            }
+            pp.p.setAttribute("d", "M " + pts.join(" L "));
+          }
+        }
+
+        tl = gsap.timeline({ paused: true });
+        draw();
+        tl.to(st, { deg: 1, duration: 10, ease: "none", onUpdate: draw }, 0);
+
+        tl.fromTo("#s5T", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 0.1);
+        // "w każdym rzędzie odstępy są nierówne"
+        tl.to("#s5Rows", { opacity: 1, duration: 0.3 }, 5.2);
+        tl.fromTo("#s5Chip", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3, ease: "back.out(2)" }, 7.8);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["s5-bulgot"] = tl;
+      })();
+    </script>
+  </div>
+</template>

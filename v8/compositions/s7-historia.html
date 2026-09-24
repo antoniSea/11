@@ -1,0 +1,55 @@
+<template id="s7-historia-template">
+  <div data-composition-id="s7-historia" data-width="1080" data-height="1920" data-duration="7.5">
+    <style>
+      #s7Year { left: 70px; top: 380px; font-size: 200px; color: var(--oil); text-shadow: 0 10px 50px rgba(4,6,9,0.85); }
+      .s7-node { position: absolute; left: 170px; opacity: 0; }
+      .s7-node .y { font-family: var(--mono); font-size: 34px; font-weight: 600; color: var(--oil); letter-spacing: 0.02em; }
+      .s7-node .n { font-size: 60px; font-weight: 600; text-transform: uppercase; line-height: 1; }
+      #s7Chips { position: absolute; left: 70px; width: 940px; top: 1330px; display: flex; flex-wrap: wrap; gap: 14px; }
+      #s7Chips .chip { opacity: 0; font-size: 42px; }
+    </style>
+
+    <div class="kick" id="s7K">Historia</div>
+    <div class="big" id="s7Year">1914</div>
+
+    <svg class="bsvg" viewBox="0 0 1080 1920">
+      <line id="s7Line" x1="120" y1="660" x2="120" y2="1250" stroke="rgba(245,170,60,0.6)" stroke-width="4" stroke-dasharray="590" stroke-dashoffset="590" />
+      <circle class="s7-dot" id="s7D1" cx="120" cy="700" r="14" fill="#f5aa3c" opacity="0" />
+      <circle class="s7-dot" id="s7D2" cx="120" cy="840" r="14" fill="#f5aa3c" opacity="0" />
+      <circle class="s7-dot" id="s7D3" cx="120" cy="980" r="14" fill="#f5aa3c" opacity="0" />
+      <circle class="s7-dot" id="s7D4" cx="120" cy="1120" r="14" fill="#f5aa3c" opacity="0" />
+    </svg>
+    <div class="s7-node" id="s7N1" style="top:660px"><div class="y">1914</div><div class="n">Cadillac</div></div>
+    <div class="s7-node" id="s7N2" style="top:800px"><div class="y">1932</div><div class="n">Ford Flathead</div></div>
+    <div class="s7-node" id="s7N3" style="top:940px"><div class="y">1955</div><div class="n">Chevy small block</div></div>
+    <div class="s7-node" id="s7N4" style="top:1080px"><div class="y">Dziś</div><div class="n">Ponad <span class="em">100 lat</span></div></div>
+
+    <div id="s7Chips">
+      <span class="chip oil" id="s7C1">Pickupy</span>
+      <span class="chip oil" id="s7C2">Muscle cary</span>
+      <span class="chip oil" id="s7C3">Formuła 1</span>
+    </div>
+
+    <script>
+      (function () {
+        const yearEl = document.getElementById("s7Year");
+        const st = { y: 1914 };
+        const show = () => { yearEl.textContent = Math.round(st.y); };
+        const tl = gsap.timeline({ paused: true });
+        show();
+        tl.to("#s7Line", { strokeDashoffset: 0, duration: 5.2, ease: "none" }, 0.1);
+        const beats = [[0.1, 1914], [1.6, 1932], [3.2, 1955], [5.0, 2026]];
+        beats.forEach(([t, y], i) => {
+          tl.to(st, { y, duration: i ? 0.5 : 0.01, ease: "power2.out", onUpdate: show }, t);
+          tl.to(`#s7D${i + 1}`, { opacity: 1, duration: 0.2 }, t);
+          tl.fromTo(`#s7N${i + 1}`, { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.3, ease: "power3.out" }, t);
+        });
+        // "od pickupów po Formułę 1"
+        tl.fromTo(["#s7C1", "#s7C2", "#s7C3"], { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3, stagger: 0.4, ease: "back.out(2)" }, 5.9);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["s7-historia"] = tl;
+      })();
+    </script>
+  </div>
+</template>

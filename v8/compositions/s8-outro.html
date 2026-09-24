@@ -1,0 +1,74 @@
+<template id="s8-outro-template">
+  <div data-composition-id="s8-outro" data-width="1080" data-height="1920" data-duration="9">
+    <style>
+      .s8-l { position: absolute; left: 70px; font-size: 76px; font-weight: 600; text-transform: uppercase; line-height: 1; color: var(--fg-2); opacity: 0; white-space: nowrap; }
+      #s8Best { position: absolute; left: 70px; top: 560px; font-size: 76px; font-weight: 600; text-transform: uppercase; line-height: 1; opacity: 0; white-space: nowrap; }
+      #s8Hear { position: absolute; left: 0; right: 0; top: 680px; text-align: center; font-size: 170px; font-weight: 700; text-transform: uppercase; line-height: 1; color: var(--oil); opacity: 0; text-shadow: 0 0 60px rgba(245,170,60,0.3), 0 10px 50px rgba(4,6,9,0.85); }
+      #s8Pick { position: absolute; left: 70px; width: 940px; top: 1090px; opacity: 0; }
+      #s8Pick .q { font-size: 72px; font-weight: 600; text-transform: uppercase; line-height: 1; }
+      #s8Opts { display: flex; gap: 16px; margin-top: 18px; }
+      .s8-o { flex: 1; border: 2px solid var(--hair); background: var(--panel); padding: 12px 18px; }
+      .s8-o .v { font-size: 58px; font-weight: 600; line-height: 1; text-transform: uppercase; }
+      .s8-o .d { margin-top: 6px; font-family: var(--mono); font-size: 20px; color: var(--fg-2); text-transform: uppercase; letter-spacing: 0.04em; }
+      #s8Cta { display: flex; align-items: center; gap: 14px; margin-top: 16px; font-family: var(--mono); font-size: 25px; color: var(--fg); }
+      #s8Cta svg { width: 44px; height: 44px; flex: none; }
+    </style>
+
+    <div class="s8-l" id="s8A" style="top:300px"><span class="strike" id="s8As">Najlżejszy?</span></div>
+    <div class="s8-l" id="s8B" style="top:400px"><span class="strike" id="s8Bs">Najoszczędniejszy?</span></div>
+    <div id="s8Best">Najlepszy na świecie?</div>
+    <div id="s8Hear">Posłuchaj</div>
+
+    <svg class="bsvg" viewBox="0 0 1080 1920">
+      <path id="s8Wave" fill="none" stroke="#f5aa3c" stroke-width="6" stroke-linejoin="round" opacity="0" />
+    </svg>
+
+    <div id="s8Pick">
+      <div class="q">A ty? <span class="em">V8</span> czy turbo R4?</div>
+      <div id="s8Opts">
+        <div class="s8-o" id="s8O1"><div class="v em">V8</div><div class="d">bulgot i moment od dołu</div></div>
+        <div class="s8-o" id="s8O2"><div class="v">Turbo R4</div><div class="d">mniej pali, mniej waży</div></div>
+      </div>
+      <div id="s8Cta"><svg viewBox="0 0 58 58"><path d="M8 10 H50 A4 4 0 0 1 54 14 V38 A4 4 0 0 1 50 42 H24 L12 52 V42 H8 A4 4 0 0 1 4 38 V14 A4 4 0 0 1 8 10 Z" fill="none" stroke="#f5aa3c" stroke-width="3.5" stroke-linejoin="round" /><circle cx="19" cy="26" r="3" fill="#f5aa3c" /><circle cx="29" cy="26" r="3" fill="#f5aa3c" /><circle cx="39" cy="26" r="3" fill="#f5aa3c" /></svg><span>Napisz w komentarzu</span></div>
+    </div>
+
+    <script>
+      (function () {
+        const { wrap, clamp01 } = window.V8;
+        // fala wydechu lewego rzędu: impulsy co 270 / 180 / 90 / 180°
+        const FIRES = [0, 270, 450, 540];
+        const wave = document.getElementById("s8Wave");
+        const st = { k: 0 };
+        let tl;
+        function draw() {
+          const t = tl ? tl.time() : 0, sh = t * 900, amp = 80 * clamp01((t - 5.2) / 0.3);
+          const pts = [];
+          for (let i = 0; i <= 260; i++) {
+            const x = i / 260, a = x * 1440 + sh;
+            let v = 0;
+            for (const f of FIRES) for (const k of [-720, 0, 720]) { const u = wrap(a, 720) - f - k; v += Math.exp(-Math.pow(u / 30, 2)) * Math.cos(u / 9); }
+            pts.push(`${(70 + x * 940).toFixed(1)},${(960 - amp * v).toFixed(1)}`);
+          }
+          wave.setAttribute("d", "M " + pts.join(" L "));
+        }
+        tl = gsap.timeline({ paused: true });
+        draw();
+        tl.to(st, { k: 1, duration: 9, ease: "none", onUpdate: draw }, 0);
+
+        tl.fromTo("#s8A", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.3 }, 0.1);
+        tl.fromTo("#s8As", { "--k": 0 }, { "--k": 1, duration: 0.3, ease: "power2.inOut" }, 0.7);
+        tl.fromTo("#s8B", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.3 }, 1.3);
+        tl.fromTo("#s8Bs", { "--k": 0 }, { "--k": 1, duration: 0.3, ease: "power2.inOut" }, 2.1);
+        tl.fromTo("#s8Best", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.3 }, 2.9);
+        // "po prostu posłuchaj"
+        tl.fromTo("#s8Hear", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, duration: 0.3, ease: "power4.in" }, 5.2);
+        tl.to("#s8Wave", { opacity: 1, duration: 0.2 }, 5.3);
+        // "A ty? V8 czy turbo czwórka?"
+        tl.fromTo("#s8Pick", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.35, ease: "power3.out" }, 6.5);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["s8-outro"] = tl;
+      })();
+    </script>
+  </div>
+</template>

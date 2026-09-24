@@ -1,0 +1,59 @@
+<template id="s1-hook-template">
+  <div data-composition-id="s1-hook" data-width="1080" data-height="1920" data-duration="6.5">
+    <style>
+      #s1Bg { opacity: 0; }
+      .s1-line { position: absolute; left: 70px; right: 60px; font-size: 84px; font-weight: 600; line-height: 1; text-transform: uppercase; color: var(--fg-2); opacity: 0; white-space: nowrap; }
+      #s1c { color: var(--fg); font-size: 78px; }
+      #s1V { position: absolute; left: 0; right: 0; top: 690px; text-align: center; font-size: 560px; font-weight: 700; line-height: 1; color: var(--oil); letter-spacing: -0.02em; text-shadow: 0 0 80px rgba(245,170,60,0.35), 0 20px 60px rgba(4,6,9,0.9); opacity: 0; }
+      #s1d { position: absolute; left: 0; right: 0; top: 1430px; text-align: center; font-size: 62px; font-weight: 600; line-height: 1.05; text-transform: uppercase; opacity: 0; }
+    </style>
+
+    <svg class="bsvg" viewBox="0 0 1080 1920"><g id="s1Bg"></g></svg>
+
+    <div class="s1-line" id="s1a" style="top:330px">Są mocniejsze.</div>
+    <div class="s1-line" id="s1b" style="top:430px">Są oszczędniejsze.</div>
+    <div class="s1-line" id="s1c" style="top:560px">Ale żaden nie jedzie jak</div>
+    <div id="s1V">V8</div>
+
+    <svg class="bsvg" viewBox="0 0 1080 1920">
+      <path id="s1Va" d="M 420 1270 L 540 1390 L 660 1270" fill="none" stroke="#f5aa3c" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="360" stroke-dashoffset="360" />
+      <path id="s1Arc" d="M 505 1355 A 50 50 0 0 1 575 1355" fill="none" stroke="#eef2f7" stroke-width="4" opacity="0" />
+      <text id="s1Deg" x="540" y="1338" text-anchor="middle" style="font-size:34px;font-weight:600;fill:#eef2f7;letter-spacing:0" opacity="0">90°</text>
+    </svg>
+
+    <div id="s1d">To nie magia. To <span class="em">geometria.</span></div>
+    <div class="flash" id="s1F"></div>
+
+    <script>
+      (function () {
+        const { vSection } = window.V8;
+        const eng = vSection(document.getElementById("s1Bg"), { cx: 540, cy: 1130, s: 1.25 });
+        const st = { deg: 0 };
+        const tl = gsap.timeline({ paused: true });
+
+        // wał kręci się przez całą scenę: 3 obroty
+        tl.to(st, { deg: 1080, duration: 6.5, ease: "none", onUpdate: () => eng.update(st.deg) }, 0);
+        tl.to("#s1Bg", { opacity: 0.2, duration: 0.6 }, 0);
+
+        tl.fromTo("#s1a", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 0.15);
+        tl.fromTo("#s1b", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 1.25);
+        tl.fromTo("#s1c", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 2.4);
+
+        // uderzenie V8
+        tl.fromTo("#s1V", { opacity: 0, scale: 1.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: "power4.in" }, 3.25);
+        tl.set("#s1F", { opacity: 0.8 }, 3.6);
+        tl.to("#s1F", { opacity: 0, duration: 0.45, ease: "power2.out" }, 3.6);
+        tl.to("#s1Bg", { opacity: 0.32, duration: 0.2 }, 3.6);
+        tl.to(["#s1a", "#s1b"], { opacity: 0.35, duration: 0.3 }, 3.6);
+
+        // kąt V pod literami
+        tl.to("#s1Va", { strokeDashoffset: 0, duration: 0.6, ease: "power2.inOut" }, 4.7);
+        tl.to(["#s1Arc", "#s1Deg"], { opacity: 1, duration: 0.3 }, 5.1);
+        tl.fromTo("#s1d", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.35, ease: "power3.out" }, 4.6);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["s1-hook"] = tl;
+      })();
+    </script>
+  </div>
+</template>

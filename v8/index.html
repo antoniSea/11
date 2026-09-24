@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8">
+    <title>Dlaczego V8</title>
+    <!-- GSAP trzymany lokalnie, żeby render nie zależał od CDN -->
+    <script src="vendor/gsap.min.js"></script>
+    <script src="lib/v8.js"></script>
+    <style>
+      :root {
+        --fg: #eef2f7;
+        --fg-2: #b6c1cf;
+        --oil: #f5aa3c;
+        --heat: #e2492b;
+        --hot: #ff6a4d;
+        --ok: #86dba1;
+        --hair: rgba(150, 165, 182, 0.3);
+        --panel: rgba(9, 12, 17, 0.92);
+        --sans: Oswald, sans-serif;
+        --mono: "IBM Plex Mono", monospace;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #0a0c10; }
+      #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #0a0c10; font-family: var(--sans); color: var(--fg); }
+
+      /* tło wspólne dla wszystkich scen */
+      #bg { position: absolute; inset: 0; background: radial-gradient(118% 60% at 50% 44%, #161d26 0%, #0a0c10 58%, #06080b 100%); }
+      #bg .grid { position: absolute; inset: 0; background-image: linear-gradient(to right, rgba(150,165,182,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(150,165,182,0.05) 1px, transparent 1px); background-size: 90px 90px; -webkit-mask-image: radial-gradient(72% 46% at 50% 44%, #000 0%, transparent 80%); mask-image: radial-gradient(72% 46% at 50% 44%, #000 0%, transparent 80%); }
+      .scene { position: absolute; inset: 0; overflow: hidden; }
+
+      /* typografia wspólna dla scen */
+      .kick { position: absolute; top: 262px; left: 70px; right: 70px; font-family: var(--mono); font-size: 23px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--oil); display: flex; align-items: center; gap: 18px; white-space: nowrap; }
+      .kick::after { content: ""; flex: 1; height: 1px; background: linear-gradient(to right, rgba(245,170,60,0.5), transparent); }
+      .ttl { position: absolute; top: 300px; left: 70px; right: 60px; font-size: 84px; font-weight: 600; line-height: 1.02; text-transform: uppercase; text-shadow: 0 6px 34px rgba(4,6,9,0.9); }
+      .ttl em, .em { font-style: normal; color: var(--oil); }
+      .hot { color: var(--hot); }
+      .ok { color: var(--ok); }
+      .lbl { position: absolute; font-family: var(--mono); font-size: 24px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fg-2); white-space: nowrap; }
+      .big { position: absolute; font-family: var(--mono); font-weight: 600; line-height: 1; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+      .bsvg { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; overflow: visible; }
+      .bsvg text { font-family: var(--mono); fill: var(--fg-2); font-size: 24px; letter-spacing: 0.14em; }
+      .chip { display: inline-block; font-family: var(--sans); font-size: 46px; font-weight: 600; text-transform: uppercase; padding: 4px 22px; background: var(--panel); border: 2px solid rgba(134,219,161,0.6); color: var(--ok); white-space: nowrap; }
+      .chip.oil { border-color: rgba(245,170,60,0.7); color: #ffd79a; }
+      .chip.hot { border-color: rgba(226,73,43,0.8); color: #ffb0a0; }
+      .stamp { position: absolute; transform: translate(-50%, -50%) rotate(-7deg); font-family: var(--sans); font-size: 86px; font-weight: 600; text-transform: uppercase; white-space: nowrap; padding: 4px 30px; border: 6px solid currentColor; }
+      .stamp.ok { color: var(--ok); background: rgba(8,22,14,0.88); }
+      .stamp.hot { color: #ff5a3c; background: rgba(28,10,8,0.88); }
+      .stamp.oil { color: var(--oil); background: rgba(26,18,6,0.88); }
+      .strike { position: relative; display: inline-block; }
+      .strike::after { content: ""; position: absolute; left: -8px; right: -8px; top: 42%; height: 10px; background: var(--heat); transform-origin: left center; transform: scaleX(var(--k, 0)); }
+      .flash { position: absolute; inset: 0; background: #fff4e2; opacity: 0; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="66.5" data-width="1080" data-height="1920">
+      <div id="bg"><div class="grid"></div></div>
+
+      <!-- Sceny: każda ma własną oś czasu, więc w Studio przesuwasz/rozciągasz je pod lektora -->
+      <div id="s1-hook" class="scene" data-composition-id="s1-hook" data-composition-src="compositions/s1-hook.html" data-start="0" data-duration="6.5" data-track-index="1"></div>
+      <div id="s2-uklad" class="scene" data-composition-id="s2-uklad" data-composition-src="compositions/s2-uklad.html" data-start="6.5" data-duration="8" data-track-index="2"></div>
+      <div id="s3-zaplony" class="scene" data-composition-id="s3-zaplony" data-composition-src="compositions/s3-zaplony.html" data-start="14.5" data-duration="9" data-track-index="1"></div>
+      <div id="s4-wal" class="scene" data-composition-id="s4-wal" data-composition-src="compositions/s4-wal.html" data-start="23.5" data-duration="9" data-track-index="2"></div>
+      <div id="s5-bulgot" class="scene" data-composition-id="s5-bulgot" data-composition-src="compositions/s5-bulgot.html" data-start="32.5" data-duration="10" data-track-index="1"></div>
+      <div id="s6-moment" class="scene" data-composition-id="s6-moment" data-composition-src="compositions/s6-moment.html" data-start="42.5" data-duration="7.5" data-track-index="2"></div>
+      <div id="s7-historia" class="scene" data-composition-id="s7-historia" data-composition-src="compositions/s7-historia.html" data-start="50" data-duration="7.5" data-track-index="1"></div>
+      <div id="s8-outro" class="scene" data-composition-id="s8-outro" data-composition-src="compositions/s8-outro.html" data-start="57.5" data-duration="9" data-track-index="2"></div>
+
+      <!-- Lektor: po nagraniu wrzuć plik do assets/ i dodaj tu element audio z id="vo",
+           data-start="0", data-duration="66.5" i data-track-index="30". -->
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>
